@@ -1,9 +1,10 @@
 package main
 
 import (
+	"backend/db"
+	"backend/messagepost"
 	"log"
 	"net/http"
-	"backend/messagepost"
 )
 
 type APIServer struct {
@@ -19,24 +20,24 @@ func NewAPIServer(addr string) *APIServer {
 
 // Run Server
 func (s *APIServer) run() error {
+	// Setup new Router
 	var router *http.ServeMux = http.NewServeMux()
 
-	router.HandleFunc("GET /users/{userID}", func(w http.ResponseWriter, r *http.Request) {
-		var userID string = r.PathValue("userID")
-		w.Write([]byte("User ID: " + userID))
-	})
+	// Setup connection with DB
+	dbHandler, err := db.NewDBHandler()
+	if err != nil {
+		log.Fatalf("failed to establish connection with the database")
+	}
+	log.Printf("successfully established connection with the database")
+	dbHandler.CreateTables()
 
-	var messagePostController *messagepost.MessagePostController = &messagepost.MessagePostController{}
-
-	router.HandleFunc("POST /api/post_message", func(w http.ResponseWriter, r *http.Request) {
-		messagePostController.PostMessage(w, r)
-	})
-
+	// Setup Middleware chain
 	var mwChain Middleware = middlewareChain(
 		requestLoggerMiddleware,
-		requireAuthMiddleware,
+		// requireAuthMiddleware,
 	)
 
+	// Setup Server
 	var server http.Server = http.Server{
 		Addr:    s.addr,
 		Handler: mwChain(router),
@@ -44,29 +45,30 @@ func (s *APIServer) run() error {
 
 	log.Printf("Server has started %s", s.addr)
 
+	// create controller and service for MessagePost
+	var messagePostService *messagepost.MessagePostService = messagepost.NewMessagePostService(dbHandler.GetDB())
+	var messagePostController *messagepost.MessagePostController = messagepost.NewMessagePostController(messagePostService)
+
+	// /api/post_message
+	router.HandleFunc("POST /api/post_message", func(w http.ResponseWriter, r *http.Request) {
+		var err error = messagePostController.PostMessage(w, r)
+		if err != nil {
+			log.Printf(err.Error())
+		}
+	})
+
+	// /api/get_message/{message_id}
+	router.HandleFunc("GET /api/get_message/{message_id}", func(w http.ResponseWriter, r *http.Request) {
+		var err error = messagePostController.GetMessage(w, r)
+		if err != nil {
+			log.Printf(err.Error())
+		}
+	})
+
 	return server.ListenAndServe()
 }
 
-func requestLoggerMiddleware(next http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("method %s, path: %s", r.Method, r.URL.Path)
-		next.ServeHTTP(w, r)
-	}
-}
-
-func requireAuthMiddleware(next http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// check if the user is authenticated
-		var token string = r.Header.Get("Authorization")
-		if token != "Bearer token" {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	}
-}
-
+// ------------------------ MIDDLEWARES ------------------------
 type Middleware func(http.Handler) http.HandlerFunc
 
 func middlewareChain(middleware ...Middleware) Middleware {
@@ -77,3 +79,24 @@ func middlewareChain(middleware ...Middleware) Middleware {
 		return next.ServeHTTP
 	}
 }
+
+func requestLoggerMiddleware(next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("method %s, path: %s", r.Method, r.URL.Path)
+		next.ServeHTTP(w, r)
+	}
+}
+
+// For the sake of learning purposes if we want multiple middleware
+// func requireAuthMiddleware(next http.Handler) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		// check if the user is authenticated
+// 		var token string = r.Header.Get("Authorization")
+// 		if token != "Bearer token" {
+// 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+// 			return
+// 		}
+
+// 		next.ServeHTTP(w, r)
+// 	}
+// }

@@ -1,7 +1,11 @@
 package messagepost
 
+import (
+	"time"
+)
+
 type MessagePostRecord struct {
-	ID     int    `json:"id"`
-	upvote int    `json:"upvote"`
-	body   string `json:"body"`
+	ID        int       `json:"id"`
+	Body      string    `json:"body"`
+	CreatedAt time.Time `json:"created_at"`
 }
