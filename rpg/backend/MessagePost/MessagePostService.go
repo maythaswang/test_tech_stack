@@ -30,7 +30,7 @@ func (s *MessagePostService) addMessage(messagePostRecord *MessagePostRecord) er
 // Get message from DB with ID
 func (s *MessagePostService) GetMessage(id int) (*MessagePostRecord, error) {
 	var message MessagePostRecord
-	query := "SELECT id, body, created_at FROM messages WHERE id = $1"
+	var query string = "SELECT id, body, created_at FROM messages WHERE id = $1"
 	err := s.db.QueryRow(query, id).Scan(&message.ID, &message.Body, &message.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -38,6 +38,20 @@ func (s *MessagePostService) GetMessage(id int) (*MessagePostRecord, error) {
 		}
 		return nil, fmt.Errorf("failed to retrieve message: %w", err)
 	}
-	log.Printf(message.Body)
 	return &message, nil
+}
+
+// Delete message from DB with ID
+func (s *MessagePostService) DeleteMessage(id int) error {
+	var query string = "DELETE FROM messages WHERE id = $1"
+	result, err := s.db.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete message: %w", err)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("no message found with ID %d", id)
+	}
+	return nil
 }

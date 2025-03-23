@@ -55,14 +55,14 @@ func (s *MessagePostController) GetMessage(w http.ResponseWriter, r *http.Reques
 	// get id
 	id, err := strconv.Atoi(r.PathValue("message_id"))
 	if err != nil {
-		http.Error(w, "invalid message id", http.StatusNotFound)
+		http.Error(w, "message not found", http.StatusNotFound)
 		return fmt.Errorf("message not found: %w", err)
 	}
 
 	// Get message from db
 	messagePostRecord, err := s.messagePostService.GetMessage(id)
 	if err != nil {
-		http.Error(w, "message not found: %w", http.StatusNotFound)
+		http.Error(w, "message not found", http.StatusNotFound)
 		return fmt.Errorf("message not found: %w", err)
 	}
 
@@ -84,6 +84,25 @@ func (s *MessagePostController) GetMessage(w http.ResponseWriter, r *http.Reques
 
 }
 
-// func (s *MessagePostController) DeleteMessage(w http.ResponseWriter, r *http.Request) error {
+func (s *MessagePostController) DeleteMessage(w http.ResponseWriter, r *http.Request) error {
+	// get id
+	id, err := strconv.Atoi(r.PathValue("message_id"))
+	if err != nil {
+		http.Error(w, "message not found", http.StatusNotFound)
+		return fmt.Errorf("message not found: %w", err)
+	}
 
-// }
+	// Delete message from DB
+	err = s.messagePostService.DeleteMessage(id)
+	if err != nil {
+		http.Error(w, "message not found", http.StatusNotFound)
+		return fmt.Errorf("message not found: %w", err)
+	}
+
+	// Successful
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Message deleted successfully"))
+
+	return nil
+
+}

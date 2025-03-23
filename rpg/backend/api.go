@@ -54,6 +54,7 @@ func (s *APIServer) run() error {
 		var err error = messagePostController.PostMessage(w, r)
 		if err != nil {
 			log.Printf(err.Error())
+			log.Printf("ERROR | method %s, path: %s, %v", r.Method, r.URL.Path, err.Error())
 		}
 	})
 
@@ -61,7 +62,15 @@ func (s *APIServer) run() error {
 	router.HandleFunc("GET /api/get_message/{message_id}", func(w http.ResponseWriter, r *http.Request) {
 		var err error = messagePostController.GetMessage(w, r)
 		if err != nil {
-			log.Printf(err.Error())
+			log.Printf("ERROR | method %s, path: %s, %v", r.Method, r.URL.Path, err.Error())
+		}
+	})
+
+	// /api/delete_message/{message_id}
+	router.HandleFunc("DELETE /api/delete_message/{message_id}", func(w http.ResponseWriter, r *http.Request) {
+		var err error = messagePostController.DeleteMessage(w, r)
+		if err != nil {
+			log.Printf("ERROR | method %s, path: %s, %v", r.Method, r.URL.Path, err.Error())
 		}
 	})
 
