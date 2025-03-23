@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"backend/messagepost"
 )
 
 type APIServer struct {
@@ -19,9 +20,16 @@ func NewAPIServer(addr string) *APIServer {
 // Run Server
 func (s *APIServer) run() error {
 	var router *http.ServeMux = http.NewServeMux()
+
 	router.HandleFunc("GET /users/{userID}", func(w http.ResponseWriter, r *http.Request) {
 		var userID string = r.PathValue("userID")
 		w.Write([]byte("User ID: " + userID))
+	})
+
+	var messagePostController *messagepost.MessagePostController = &messagepost.MessagePostController{}
+
+	router.HandleFunc("POST /api/post_message", func(w http.ResponseWriter, r *http.Request) {
+		messagePostController.PostMessage(w, r)
 	})
 
 	var mwChain Middleware = middlewareChain(
@@ -64,8 +72,8 @@ type Middleware func(http.Handler) http.HandlerFunc
 func middlewareChain(middleware ...Middleware) Middleware {
 	return func(next http.Handler) http.HandlerFunc {
 		for i := len(middleware) - 1; i >= 0; i-- {
-			next = middleware[i](next);
+			next = middleware[i](next)
 		}
-		return next.ServeHTTP;
+		return next.ServeHTTP
 	}
 }
