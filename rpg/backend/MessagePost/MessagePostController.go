@@ -8,7 +8,6 @@ import (
 	"strconv"
 )
 
-// We are merging controller and service for this case (since its just gonna be a few functions anyway)
 type MessagePostController struct {
 	messagePostService *MessagePostService
 }
@@ -50,6 +49,15 @@ func (s *MessagePostController) PostMessage(w http.ResponseWriter, r *http.Reque
 	return nil
 }
 
+// /api/post_message
+func (s *MessagePostController) PostMessageOptions(w http.ResponseWriter, r *http.Request) error {
+	// Successful
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Message received successfully"))
+
+	return nil
+}
+
 // /api/get_message/{message_id}
 func (s *MessagePostController) GetMessage(w http.ResponseWriter, r *http.Request) error {
 	// get id
@@ -84,6 +92,33 @@ func (s *MessagePostController) GetMessage(w http.ResponseWriter, r *http.Reques
 
 }
 
+// /api/get_all_messages
+func (s *MessagePostController) GetAllMessages(w http.ResponseWriter, r *http.Request) error {
+	// Get message from db
+	allMessagePostRecord, err := s.messagePostService.GetAllMessages()
+	if err != nil {
+		http.Error(w, "message not found", http.StatusNotFound)
+		return fmt.Errorf("message not found: %w", err)
+	}
+
+	// Set header
+	w.Header().Set("Content-Type", "application/json")
+
+	// Encode the messagePostRecord
+	response, err := json.Marshal(allMessagePostRecord)
+	if err != nil {
+		http.Error(w, "failed to serialize message", http.StatusInternalServerError)
+		return fmt.Errorf("failed to serialize message: %v", err)
+	}
+
+	// Successful
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+
+	return nil
+
+}
+
 func (s *MessagePostController) DeleteMessage(w http.ResponseWriter, r *http.Request) error {
 	// get id
 	id, err := strconv.Atoi(r.PathValue("message_id"))
@@ -99,6 +134,14 @@ func (s *MessagePostController) DeleteMessage(w http.ResponseWriter, r *http.Req
 		return fmt.Errorf("message not found: %w", err)
 	}
 
+	// Successful
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Message deleted successfully"))
+
+	return nil
+
+}
+func (s *MessagePostController) DeleteMessageOptions(w http.ResponseWriter, r *http.Request) error {
 	// Successful
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Message deleted successfully"))

@@ -34,8 +34,8 @@ const Blog = () => {
       });
 
       if (response.ok) {
-        const addedPost = await response.json();
-        setPosts((prevPosts) => [...prevPosts, addedPost]);
+        console.log('Post added successfully.')
+        window.location.reload()
       } else {
         alert('Failed to add post');
       }

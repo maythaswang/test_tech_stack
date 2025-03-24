@@ -1,7 +1,7 @@
 interface Post {
   id: number;
   body: string;
-  createdAt: string;
+  created_at: string;
 };
 
 export default Post;

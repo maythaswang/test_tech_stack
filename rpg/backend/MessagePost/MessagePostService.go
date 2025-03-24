@@ -16,13 +16,13 @@ func NewMessagePostService(db *sql.DB) *MessagePostService {
 }
 
 // Add message to DB
-func (s *MessagePostService) addMessage(messagePostRecord *MessagePostRecord) error {
+func (s *MessagePostService) addMessage(message *MessagePostRecord) error {
 	var query string = "INSERT INTO messages (body) VALUES ($1) RETURNING id, created_at"
-	var err error = s.db.QueryRow(query, messagePostRecord.Body).Scan(&messagePostRecord.ID, &messagePostRecord.CreatedAt)
+	var err error = s.db.QueryRow(query, message.Body).Scan(&message.ID, &message.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to add message to database: %w", err)
 	}
-	log.Printf("New message inserted: ID = %d, CreatedAt = %s\n", messagePostRecord.ID, messagePostRecord.CreatedAt)
+	log.Printf("New message inserted: ID = %d, CreatedAt = %s\n", message.ID, message.CreatedAt)
 
 	return nil
 }
@@ -39,6 +39,37 @@ func (s *MessagePostService) GetMessage(id int) (*MessagePostRecord, error) {
 		return nil, fmt.Errorf("failed to retrieve message: %w", err)
 	}
 	return &message, nil
+}
+
+// Get all messages from DB
+func (s *MessagePostService) GetAllMessages() ([]*MessagePostRecord, error) {
+	var allMessage []*MessagePostRecord
+	var query string = "SELECT * FROM messages"
+	rows, err := s.db.Query(query)
+
+	// Get records from db
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("message not found")
+		}
+		return nil, fmt.Errorf("failed to retrieve message: %w", err)
+	}
+
+	// Go through each record
+	for rows.Next() {
+		var message MessagePostRecord
+		err := rows.Scan(&message.ID, &message.Body, &message.CreatedAt)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return nil, fmt.Errorf("failed to read message")
+			}
+			return nil, fmt.Errorf("failed to read message: %w", err)
+		}
+		allMessage = append(allMessage, &message)
+
+	}
+
+	return allMessage, nil
 }
 
 // Delete message from DB with ID

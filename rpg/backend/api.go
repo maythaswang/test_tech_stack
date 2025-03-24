@@ -34,6 +34,7 @@ func (s *APIServer) run() error {
 	// Setup Middleware chain
 	var mwChain Middleware = middlewareChain(
 		requestLoggerMiddleware,
+		corsHandler,
 		// requireAuthMiddleware,
 	)
 
@@ -58,9 +59,26 @@ func (s *APIServer) run() error {
 		}
 	})
 
+	// /api/post_message
+	router.HandleFunc("OPTIONS /api/post_message", func(w http.ResponseWriter, r *http.Request) {
+		var err error = messagePostController.PostMessageOptions(w, r)
+		if err != nil {
+			log.Printf(err.Error())
+			log.Printf("ERROR | method %s, path: %s, %v", r.Method, r.URL.Path, err.Error())
+		}
+	})
+
 	// /api/get_message/{message_id}
 	router.HandleFunc("GET /api/get_message/{message_id}", func(w http.ResponseWriter, r *http.Request) {
 		var err error = messagePostController.GetMessage(w, r)
+		if err != nil {
+			log.Printf("ERROR | method %s, path: %s, %v", r.Method, r.URL.Path, err.Error())
+		}
+	})
+
+	// /api/get_all_messages
+	router.HandleFunc("GET /api/get_all_messages", func(w http.ResponseWriter, r *http.Request) {
+		var err error = messagePostController.GetAllMessages(w, r)
 		if err != nil {
 			log.Printf("ERROR | method %s, path: %s, %v", r.Method, r.URL.Path, err.Error())
 		}
@@ -70,6 +88,14 @@ func (s *APIServer) run() error {
 	router.HandleFunc("DELETE /api/delete_message/{message_id}", func(w http.ResponseWriter, r *http.Request) {
 		var err error = messagePostController.DeleteMessage(w, r)
 		if err != nil {
+			log.Printf("ERROR | method %s, path: %s, %v", r.Method, r.URL.Path, err.Error())
+		}
+	})
+	// /api/delete_message/{message_id}
+	router.HandleFunc("OPTIONS /api/delete_message/{message_id}", func(w http.ResponseWriter, r *http.Request) {
+		var err error = messagePostController.DeleteMessageOptions(w, r)
+		if err != nil {
+			log.Printf(err.Error())
 			log.Printf("ERROR | method %s, path: %s, %v", r.Method, r.URL.Path, err.Error())
 		}
 	})
@@ -92,6 +118,19 @@ func middlewareChain(middleware ...Middleware) Middleware {
 func requestLoggerMiddleware(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("method %s, path: %s", r.Method, r.URL.Path)
+		next.ServeHTTP(w, r)
+	}
+}
+
+func corsHandler(next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Print("preflight detected: ", r.Header)
+		w.Header().Add("Connection", "keep-alive")
+		w.Header().Add("Access-Control-Allow-Origin", "http://localhost:5173")
+		w.Header().Add("Access-Control-Allow-Methods", "POST, OPTIONS, GET, DELETE, PUT")
+		w.Header().Add("Access-Control-Allow-Headers", "content-type")
+		w.Header().Add("Access-Control-Max-Age", "86400")
+
 		next.ServeHTTP(w, r)
 	}
 }
