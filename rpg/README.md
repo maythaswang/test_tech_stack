@@ -1,4 +1,4 @@
 # README
-- ReactJS
+- ReactJS (Used Vite)
 - PostgreSQL
 - Go
