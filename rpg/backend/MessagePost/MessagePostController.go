@@ -12,6 +12,7 @@ type MessagePostController struct {
 	messagePostService *MessagePostService
 }
 
+// Constructor
 func NewMessagePostController(messagepostservice *MessagePostService) *MessagePostController {
 	return &MessagePostController{messagePostService: messagepostservice}
 }
@@ -147,5 +148,4 @@ func (s *MessagePostController) DeleteMessageOptions(w http.ResponseWriter, r *h
 	w.Write([]byte("Message deleted successfully"))
 
 	return nil
-
 }

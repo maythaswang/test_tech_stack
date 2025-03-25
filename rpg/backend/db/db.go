@@ -64,6 +64,7 @@ func (s *DBHandler) CreateTables() error {
 }
 
 // close db connection
+// might need to implement handling sigkill to signal running this function
 func (s *DBHandler) CloseDB() error {
 	err := s.db.Close()
 	if err != nil {

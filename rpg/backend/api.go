@@ -20,6 +20,8 @@ func NewAPIServer(addr string) *APIServer {
 
 // Run Server
 func (s *APIServer) run() error {
+	log.Printf("Starting up server")
+
 	// Setup new Router
 	var router *http.ServeMux = http.NewServeMux()
 
@@ -50,11 +52,12 @@ func (s *APIServer) run() error {
 	var messagePostService *messagepost.MessagePostService = messagepost.NewMessagePostService(dbHandler.GetDB())
 	var messagePostController *messagepost.MessagePostController = messagepost.NewMessagePostController(messagePostService)
 
+	// Set routing
+
 	// /api/post_message
 	router.HandleFunc("POST /api/post_message", func(w http.ResponseWriter, r *http.Request) {
 		var err error = messagePostController.PostMessage(w, r)
 		if err != nil {
-			log.Printf(err.Error())
 			log.Printf("ERROR | method %s, path: %s, %v", r.Method, r.URL.Path, err.Error())
 		}
 	})
@@ -63,7 +66,6 @@ func (s *APIServer) run() error {
 	router.HandleFunc("OPTIONS /api/post_message", func(w http.ResponseWriter, r *http.Request) {
 		var err error = messagePostController.PostMessageOptions(w, r)
 		if err != nil {
-			log.Printf(err.Error())
 			log.Printf("ERROR | method %s, path: %s, %v", r.Method, r.URL.Path, err.Error())
 		}
 	})
@@ -95,7 +97,6 @@ func (s *APIServer) run() error {
 	router.HandleFunc("OPTIONS /api/delete_message/{message_id}", func(w http.ResponseWriter, r *http.Request) {
 		var err error = messagePostController.DeleteMessageOptions(w, r)
 		if err != nil {
-			log.Printf(err.Error())
 			log.Printf("ERROR | method %s, path: %s, %v", r.Method, r.URL.Path, err.Error())
 		}
 	})
@@ -115,6 +116,7 @@ func middlewareChain(middleware ...Middleware) Middleware {
 	}
 }
 
+// Log request
 func requestLoggerMiddleware(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("method %s, path: %s", r.Method, r.URL.Path)
@@ -122,6 +124,7 @@ func requestLoggerMiddleware(next http.Handler) http.HandlerFunc {
 	}
 }
 
+// Allow cors header
 func corsHandler(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Print("preflight detected: ", r.Header)

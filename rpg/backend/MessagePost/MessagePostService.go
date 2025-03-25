@@ -31,7 +31,7 @@ func (s *MessagePostService) addMessage(message *MessagePostRecord) error {
 func (s *MessagePostService) GetMessage(id int) (*MessagePostRecord, error) {
 	var message MessagePostRecord
 	var query string = "SELECT id, body, created_at FROM messages WHERE id = $1"
-	err := s.db.QueryRow(query, id).Scan(&message.ID, &message.Body, &message.CreatedAt)
+	var err error = s.db.QueryRow(query, id).Scan(&message.ID, &message.Body, &message.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("message not found")
@@ -58,7 +58,7 @@ func (s *MessagePostService) GetAllMessages() ([]*MessagePostRecord, error) {
 	// Go through each record
 	for rows.Next() {
 		var message MessagePostRecord
-		err := rows.Scan(&message.ID, &message.Body, &message.CreatedAt)
+		var err error = rows.Scan(&message.ID, &message.Body, &message.CreatedAt)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return nil, fmt.Errorf("failed to read message")
